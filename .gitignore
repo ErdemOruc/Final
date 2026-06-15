@@ -1,0 +1,26 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+venv/
+.env
+
+# YOLO datasets and outputs
+YOLO/Leaf_Fruit/
+
+# KERAS datasets
+KERAS/LeafDisease/tomato/
+KERAS/OldDamaged/old_damaged_data/
+KERAS/RipeUnripe/ripe_unripe_data/
+
+# Specific output folders that might just contain run data
+outputs/
+pred/
+
+# Docs
+Doc/
+
+# IDE
+.vscode/
+.idea/

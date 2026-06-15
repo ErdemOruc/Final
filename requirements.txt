@@ -1,0 +1,12 @@
+# Web API
+fastapi
+uvicorn
+python-multipart
+pydantic
+requests
+
+# Machine Learning & Computer Vision
+numpy
+opencv-python
+tensorflow
+ultralytics

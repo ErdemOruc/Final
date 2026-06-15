@@ -1,0 +1,8 @@
+path: C:/Users/Erdem/Desktop/Final/Yolo/Leaf_Fruit
+
+train: images/train
+val: images/val
+
+names:
+  0: leaf
+  1: fruit
