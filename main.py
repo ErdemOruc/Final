@@ -77,15 +77,8 @@ def process_image(frame: np.ndarray, start: float) -> dict:
             disease    = res["disease_type"]
             confidence = res["confidence"]
 
-            llm_advice = None
             if status != "Healthy":
                 has_problem = True
-                if LLM_IS_OPEN:
-                    llm_advice  = llm_service.get_advice(
-                        item_type  = "leaf",
-                        condition  = disease,
-                        extra_info = f"Confidence: {confidence:.0%}",
-                    )
 
             items.append(DetectionItem(
                 id           = item_id,
@@ -94,7 +87,6 @@ def process_image(frame: np.ndarray, start: float) -> dict:
                 confidence   = confidence,
                 status       = status,
                 disease_type = disease if status != "Healthy" else None,
-                llm_advice   = llm_advice,
             ))
 
         elif obj_class == "fruit":
@@ -107,21 +99,9 @@ def process_image(frame: np.ndarray, start: float) -> dict:
             confidence   = (dmg["confidence"] + ripe["confidence"]) / 2
 
             fruit_problem = dmg_status != "Healthy" or ripeness not in ("Ripe",)
-            llm_advice    = None
 
             if fruit_problem:
                 has_problem = True
-                cond_parts  = []
-                if dmg_status != "Healthy":
-                    cond_parts.append(f"damage: {dmg_level}")
-                if ripeness != "Ripe":
-                    cond_parts.append(f"ripeness: {ripeness}")
-                if LLM_IS_OPEN:
-                    llm_advice = llm_service.get_advice(
-                        item_type  = "fruit",
-                        condition  = ", ".join(cond_parts),
-                        extra_info = f"Confidence: {confidence:.0%}",
-                    )
 
             items.append(DetectionItem(
                 id           = item_id,
@@ -131,7 +111,6 @@ def process_image(frame: np.ndarray, start: float) -> dict:
                 status       = dmg_status,
                 damage_level = dmg_level if dmg_status != "Healthy" else None,
                 ripeness     = ripeness,
-                llm_advice   = llm_advice,
             ))
 
     # Her zaman resmi çiz ve kaydet
@@ -153,13 +132,27 @@ def process_image(frame: np.ndarray, start: float) -> dict:
         if i.status != "Healthy" or (i.ripeness and i.ripeness not in ("Ripe", None))
     )
 
+    summary_text = f"Analyzed a plant image with {len(items)} detected parts. "
+    if not has_problem:
+        summary_text += "All parts appear healthy."
+    else:
+        summary_text += f"{problem_count} part(s) show issues: "
+        issues = []
+        for i in items:
+            if i.type == "leaf" and i.status != "Healthy":
+                issues.append(f"Leaf with {i.disease_type}")
+            elif i.type == "fruit" and (i.status != "Healthy" or i.ripeness != "Ripe"):
+                issues.append(f"Fruit that is {i.status}/{i.ripeness}")
+        summary_text += ", ".join(issues) + "."
+
+    overall_llm_advice = None
+    if LLM_IS_OPEN:
+        overall_llm_advice = llm_service.get_overall_advice(summary_text)
+
     response = {
         "overall_status": "Problem Detected" if has_problem else "Healthy",
-        "summary": (
-            f"All {len(items)} detection(s) are healthy."
-            if not has_problem
-            else f"{problem_count} out of {len(items)} detection(s) have issues."
-        ),
+        "summary": summary_text,
+        "llm": overall_llm_advice,
         "processing_time_ms": int((time.time() - start) * 1000),
     }
 

@@ -20,6 +20,41 @@ class LLMService:
         self.model      = model or self.DEFAULT_MODEL
         self._available = None
 
+    def get_overall_advice(self, summary_text: str) -> str:
+        prompt = (
+            "You are an expert agricultural advisor analyzing a tomato plant. "
+            "I will give you a summary of what was detected on the plant. "
+            "You MUST strictly follow this format for your response:\n"
+            "1. HEALTH SUMMARY: (Write 1 sentence summarizing the overall health).\n"
+            "2. ACTION PLAN: (List 2 or 3 short, specific steps to treat the problems or maintain health).\n\n"
+            "Here is the detection summary:\n"
+            f"[{summary_text}]\n\n"
+            "Do NOT write any extra text. Do NOT explain what the diseases are. Just give the Health Summary and the Action Plan."
+        )
+        try:
+            resp = requests.post(
+                f"{self.ollama_url}/api/generate",
+                json={
+                    "model":  self.model,
+                    "prompt": prompt,
+                    "system": self.SYSTEM_PROMPT,
+                    "stream": False,
+                    "options": {"temperature": 0.3, "num_predict": 250},
+                },
+                timeout=self.TIMEOUT,
+            )
+            if resp.status_code == 200:
+                advice = resp.json().get("response", "").strip()
+                self._available = True
+                return advice or self._fallback("plant", "overall_summary")
+            logger.warning(f"Ollama status: {resp.status_code}")
+        except requests.exceptions.ConnectionError:
+            logger.warning("Ollama not reachable — using fallback advice.")
+            self._available = False
+        except Exception as e:
+            logger.error(f"LLM error: {e}")
+        return self._fallback("plant", "overall_summary")
+
     def get_advice(self, item_type: str, condition: str, extra_info: str = "") -> str:
         prompt = self._build_prompt(item_type, condition, extra_info)
         try:
@@ -120,6 +155,9 @@ class LLMService:
                 "Harvest immediately if still on the plant. "
                 "Consider processing into by-products (sauce, paste) rather than fresh sale."
             ),
+            "overall_summary": (
+                "General observation complete. If there are any diseases or damages noted, please treat them with appropriate fungicides or separate the damaged parts. Maintain a healthy watering and nutrient schedule."
+            )
         }
 
         if condition in FALLBACKS:

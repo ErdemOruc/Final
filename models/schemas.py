@@ -19,9 +19,7 @@ class DetectionItem(BaseModel):
     disease_type: Optional[str] = None  
 
     damage_level: Optional[str] = None   
-    ripeness:     Optional[str] = None   
-
-    llm_advice:   Optional[str] = None
+    ripeness:     Optional[str] = None
 
     class Config:
         use_enum_values = True
@@ -39,15 +37,13 @@ class DetectionItem(BaseModel):
             base["damage_level"] = self.damage_level or "None"
             base["ripeness"]     = self.ripeness     or "Unknown"
 
-        if self.llm_advice:
-            base["llm_recommendation"] = self.llm_advice
-
         return base
 
 
 class PipelineResponse(BaseModel):
     overall_status:      str
-    message:             str
+    summary:             str
     items:               List[DetectionItem]
+    llm:                 Optional[str] = None
     annotated_image_url: Optional[str] = None
     processing_time_ms:  int
