@@ -7,10 +7,11 @@ This project is a complete deep learning pipeline for agricultural analysis. It 
 - **Object Detection (YOLO)**: Detects leaves and fruits in an image.
 - **Disease & Damage Classification (Keras)**: 
   - Classifies leaf diseases (e.g., healthy, blight, spot).
-  - Assesses fruit damage levels and health.
+  - Assesses fruit damage levels and health (predictions with <= 50% confidence default to Healthy to avoid false alarms).
   - Determines fruit ripeness.
-- **AI-Powered Advice (Ollama / LLM)**: Automatically generates practical treatment or handling advice for any detected issues using a local LLM.
+- **AI-Powered Advice (Ollama / LLM)**: Automatically generates practical treatment or handling advice for any detected issues using a local LLM (Can be toggled via `LLM_IS_OPEN` flag).
 - **FastAPI Backend**: Provides a fast, easy-to-use REST API for image upload and analysis.
+- **Advanced Bounding Box Filtering**: Custom NMS (Non-Maximum Suppression) guarantees no overlapping bounding boxes in detection outputs.
 - **Image Annotation**: Returns a detailed JSON report along with an annotated image showing bounding boxes and detected conditions.
 
 ## 🛠️ Installation & Setup
@@ -42,6 +43,7 @@ This project is a complete deep learning pipeline for agricultural analysis. It 
      ollama run phi3
      ```
      *(Make sure Ollama is running on `http://localhost:11434`)*
+   - To enable the LLM advice in the API, open `main.py` and set `LLM_IS_OPEN = True` (it is `False` by default for faster inference).
 
 ## 🚦 Usage
 
@@ -64,7 +66,10 @@ This project is a complete deep learning pipeline for agricultural analysis. It 
 - `services/`: Contains specific service classes for handling YOLO, Keras predictions, LLM queries, and image annotation.
 - `models/`: Pydantic schemas for API responses.
 - `YOLO/`: Contains YOLO model scripts and weights.
-- `KERAS/`: Contains Keras classification models.
+- `KERAS/`: Contains Keras classification models and their individual training scripts.
+  - **Note on Training**: For the `OldDamaged` classification, training is split into two scripts:
+    1. `OldDamagedModel.py`: Trains the top layers (Transfer Learning).
+    2. `OldDamagedFineTune.py`: Unfreezes the base model and fine-tunes with a low learning rate for higher accuracy.
 
 ## 📝 Requirements
 
