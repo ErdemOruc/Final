@@ -11,7 +11,7 @@ class FruitDamageService(BaseKerasService):
     ]
 
     PROBLEM_CLASSES = {"Damaged", "Old"}
-    CONFIDENCE_THRESHOLD = 0.85
+    CONFIDENCE_THRESHOLD = 0.75
 
     def predict(self, crop: np.ndarray) -> dict:
         class_name, confidence = self._run_inference(crop)

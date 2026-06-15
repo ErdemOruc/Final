@@ -18,7 +18,7 @@ class LeafDiseaseService(BaseKerasService):
     ]
 
     HEALTHY_CLASSES = {"Tomato__healthy"}
-    CONFIDENCE_THRESHOLD = 0.80
+    CONFIDENCE_THRESHOLD = 0.75
 
     def predict(self, crop: np.ndarray) -> dict:
         class_name, confidence = self._run_inference(crop)
