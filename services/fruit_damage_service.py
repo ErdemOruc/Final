@@ -11,23 +11,23 @@ class FruitDamageService(BaseKerasService):
     ]
 
     PROBLEM_CLASSES = {"Damaged", "Old"}
-    CONFIDENCE_THRESHOLD = 0.50
+    CONFIDENCE_THRESHOLD = 0.85
 
     def predict(self, crop: np.ndarray) -> dict:
         class_name, confidence = self._run_inference(crop)
 
-        if confidence < self.CONFIDENCE_THRESHOLD:
+        is_healthy_class = class_name not in self.PROBLEM_CLASSES
+
+        if not is_healthy_class and confidence <= self.CONFIDENCE_THRESHOLD:
             return {
                 "status":       "Healthy", 
-                "damage_level": "Uncertain",
+                "damage_level": "None",
                 "confidence":   confidence,
             }
 
-        is_healthy = class_name not in self.PROBLEM_CLASSES
-
         return {
-            "status":       "Healthy" if is_healthy else class_name, 
-            "damage_level": "None" if is_healthy else class_name,
+            "status":       "Healthy" if is_healthy_class else class_name, 
+            "damage_level": "None" if is_healthy_class else class_name,
             "confidence":   confidence,
         }
 

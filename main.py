@@ -11,6 +11,8 @@ import asyncio
 import os
 from pathlib import Path
 
+LLM_IS_OPEN = False
+
 from LoadModels import LoadModel
 
 yolo_model, keras_LeafDisease, keras_OldDamaged, keras_RipeUnripe = LoadModel()
@@ -78,11 +80,12 @@ def process_image(frame: np.ndarray, start: float) -> dict:
             llm_advice = None
             if status != "Healthy":
                 has_problem = True
-                llm_advice  = llm_service.get_advice(
-                    item_type  = "leaf",
-                    condition  = disease,
-                    extra_info = f"Confidence: {confidence:.0%}",
-                )
+                if LLM_IS_OPEN:
+                    llm_advice  = llm_service.get_advice(
+                        item_type  = "leaf",
+                        condition  = disease,
+                        extra_info = f"Confidence: {confidence:.0%}",
+                    )
 
             items.append(DetectionItem(
                 id           = item_id,
@@ -113,11 +116,12 @@ def process_image(frame: np.ndarray, start: float) -> dict:
                     cond_parts.append(f"damage: {dmg_level}")
                 if ripeness != "Ripe":
                     cond_parts.append(f"ripeness: {ripeness}")
-                llm_advice = llm_service.get_advice(
-                    item_type  = "fruit",
-                    condition  = ", ".join(cond_parts),
-                    extra_info = f"Confidence: {confidence:.0%}",
-                )
+                if LLM_IS_OPEN:
+                    llm_advice = llm_service.get_advice(
+                        item_type  = "fruit",
+                        condition  = ", ".join(cond_parts),
+                        extra_info = f"Confidence: {confidence:.0%}",
+                    )
 
             items.append(DetectionItem(
                 id           = item_id,
@@ -229,7 +233,7 @@ async def health():
             "leaf_disease":   leaf_disease_service.is_loaded(),
             "fruit_damage":   fruit_damage_service.is_loaded(),
             "fruit_ripeness": fruit_ripeness_service.is_loaded(),
-            "llm_ollama":     llm_service.is_available(),
+            "llm_ollama":     llm_service.is_available() if LLM_IS_OPEN else False,
         },
     }
 

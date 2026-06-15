@@ -59,7 +59,15 @@ model.add(Dense(3, activation='softmax'))
 
 model.compile(optimizer=Adam(learning_rate=0.0001), loss='categorical_crossentropy', metrics=['accuracy'])
 
-history = model.fit(train_data, epochs=100, validation_data=val_data, callbacks=[EarlyStopping(patience=7, restore_best_weights=True)])
+print("\n--- AŞAMA 1 BAŞLIYOR (Üst Katmanlar) ---")
+history = model.fit(
+    train_data, 
+    epochs=25, 
+    validation_data=val_data, 
+    callbacks=[EarlyStopping(patience=5, restore_best_weights=True)]
+)
+
+print("\n--- AŞAMA 1 TAMAMLANDI ---")
 
 evaluation = model.evaluate(val_data)
 

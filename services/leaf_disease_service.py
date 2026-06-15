@@ -18,23 +18,23 @@ class LeafDiseaseService(BaseKerasService):
     ]
 
     HEALTHY_CLASSES = {"Tomato__healthy"}
-    CONFIDENCE_THRESHOLD = 0.50
+    CONFIDENCE_THRESHOLD = 0.80
 
     def predict(self, crop: np.ndarray) -> dict:
         class_name, confidence = self._run_inference(crop)
         
-        if confidence < self.CONFIDENCE_THRESHOLD:
+        is_healthy_class = class_name in self.HEALTHY_CLASSES
+
+        if not is_healthy_class and confidence <= self.CONFIDENCE_THRESHOLD:
             return {
                 "status":       "Healthy",
-                "disease_type": "Uncertain",
+                "disease_type": "None",
                 "confidence":   confidence,
             }
 
-        is_healthy = class_name in self.HEALTHY_CLASSES
-
         return {
-            "status":       "Healthy" if is_healthy else "Diseased",
-            "disease_type": class_name,
+            "status":       "Healthy" if is_healthy_class else "Diseased",
+            "disease_type": "None" if is_healthy_class else class_name,
             "confidence":   confidence,
         }
 
