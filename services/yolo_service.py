@@ -11,7 +11,7 @@ class YOLOService:
         1: "fruit",
     }
 
-    CONFIDENCE_THRESHOLD = 0.05
+    CONFIDENCE_THRESHOLD = 0.01
     IOU_THRESHOLD        = 0.15
 
     def __init__(self, model):
