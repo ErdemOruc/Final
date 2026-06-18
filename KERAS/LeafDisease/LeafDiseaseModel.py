@@ -59,4 +59,4 @@ print("Validation Loss:", evaluation[0])
 print("Validation Accuracy:", evaluation[1])
 
 model.save(MODEL_SAVE_PATH)
-print("Model kaydedildi!")
+print("Model saved successfully!")

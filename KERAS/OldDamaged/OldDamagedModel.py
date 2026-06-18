@@ -59,7 +59,7 @@ model.add(Dense(3, activation='softmax'))
 
 model.compile(optimizer=Adam(learning_rate=0.0001), loss='categorical_crossentropy', metrics=['accuracy'])
 
-print("\n--- AŞAMA 1 BAŞLIYOR (Üst Katmanlar) ---")
+print("\n--- PHASE 1 STARTING (Top Layers) ---")
 history = model.fit(
     train_data, 
     epochs=25, 
@@ -67,7 +67,7 @@ history = model.fit(
     callbacks=[EarlyStopping(patience=5, restore_best_weights=True)]
 )
 
-print("\n--- AŞAMA 1 TAMAMLANDI ---")
+print("\n--- PHASE 1 COMPLETE ---")
 
 evaluation = model.evaluate(val_data)
 
@@ -75,4 +75,4 @@ print("Validation Loss:", evaluation[0])
 print("Validation Accuracy:", evaluation[1])
 
 model.save(MODEL_SAVE_PATH)
-print("Model kaydedildi!")
+print("Model saved successfully!")

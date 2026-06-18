@@ -10,6 +10,7 @@ import logging
 import asyncio
 import os
 from pathlib import Path
+import json
 
 LLM_IS_OPEN = True
 
@@ -36,9 +37,18 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 app = FastAPI(
-    title="Plant Health Pipeline",
+    title="GAIA",
     description="YOLO + Keras + Ollama — leaf & fruit health analysis",
     version="1.0.0",
+)
+
+from fastapi.middleware.cors import CORSMiddleware
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 OUTPUT_DIR = Path("outputs")
@@ -131,18 +141,21 @@ def process_image(frame: np.ndarray, start: float) -> dict:
         if i.status != "Healthy" or (i.ripeness and i.ripeness not in ("Ripe", None))
     )
 
-    summary_text = f"Analyzed a plant image with {len(items)} detected parts. "
-    if not has_problem:
-        summary_text += "All parts appear healthy."
-    else:
-        summary_text += f"{problem_count} part(s) show issues: "
-        issues = []
-        for i in items:
-            if i.type == "leaf" and i.status != "Healthy":
-                issues.append(f"Leaf with {i.disease_type}")
-            elif i.type == "fruit" and (i.status != "Healthy" or i.ripeness != "Ripe"):
-                issues.append(f"Fruit that is {i.status}/{i.ripeness}")
-        summary_text += ", ".join(issues) + "."
+    leaf_count = sum(1 for i in items if i.type == "leaf")
+    fruit_count = sum(1 for i in items if i.type == "fruit")
+    diseased_leaves = sum(1 for i in items if i.type == "leaf" and i.status != "Healthy")
+    harvestable_fruits = sum(1 for i in items if i.type == "fruit" and i.status == "Healthy" and i.ripeness == "Ripe")
+    not_ready_fruits = fruit_count - harvestable_fruits
+    
+    summary_parts = [f"Detected {leaf_count} leaves and {fruit_count} fruits in the image."]
+    if leaf_count > 0:
+        summary_parts.append(f"{diseased_leaves} of the leaves show signs of disease.")
+    if fruit_count > 0:
+        summary_parts.append(f"{harvestable_fruits} of the fruits are ready for harvest (Ripe).")
+        if not_ready_fruits > 0:
+            summary_parts.append(f"{not_ready_fruits} fruits are either damaged or not ready for harvest.")
+            
+    summary_text = "\n".join(summary_parts)
 
     overall_llm_advice = None
     if LLM_IS_OPEN:
@@ -162,6 +175,10 @@ def process_image(frame: np.ndarray, start: float) -> dict:
     if annotated_image_path:
         response["annotated_image"] = annotated_image_path
 
+    json_fname = fname.replace(".jpg", ".json")
+    with open(OUTPUT_DIR / json_fname, "w", encoding="utf-8") as f:
+        json.dump(response, f, ensure_ascii=False, indent=4)
+
     return response
 
 @app.post("/analyze")
@@ -176,7 +193,10 @@ async def analyze(file: UploadFile = File(...)):
         raise HTTPException(status_code=400, detail="Invalid image file.")
 
     global latest_simulated_result
-    response_dict = process_image(frame, start)
+    
+    loop = asyncio.get_running_loop()
+    response_dict = await loop.run_in_executor(None, process_image, frame, start)
+    
     latest_simulated_result = response_dict
     
     return JSONResponse(response_dict)

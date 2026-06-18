@@ -8,7 +8,6 @@ TRAIN_DIR = os.path.join(BASE_DIR, "tomato", "train")
 VAL_DIR = os.path.join(BASE_DIR, "tomato", "val")
 MODEL_SAVE_PATH = os.path.join(BASE_DIR, "LeafDiseaseWeight.keras")
 
-# 1. Load Data
 train_data = tf.keras.utils.image_dataset_from_directory(
     TRAIN_DIR,
     labels='inferred',
@@ -27,7 +26,6 @@ val_data = tf.keras.preprocessing.image_dataset_from_directory(
 
 val_data = val_data.map(lambda x, y: (x / 255.0, y))
 
-# 2. Load Pre-trained Model (Output of Phase 1)
 print("\n--- LOADING PRE-TRAINED MODEL ---")
 if not os.path.exists(MODEL_SAVE_PATH):
     print(f"ERROR: {MODEL_SAVE_PATH} not found! You should run LeafDiseaseModel.py first.")
@@ -35,10 +33,8 @@ if not os.path.exists(MODEL_SAVE_PATH):
 
 model = tf.keras.models.load_model(MODEL_SAVE_PATH)
 
-# 3. Fine-Tuning Setup
 print("\n--- STARTING FINE-TUNING PHASE ---")
 
-# Find the DenseNet121 layer inside the model
 conv_base = None
 for layer in model.layers:
     if layer.name.startswith("densenet"):
@@ -49,17 +45,13 @@ if conv_base is None:
     print("ERROR: Model's DenseNet121 layer is not found!")
     exit(1)
 
-# Unfreeze DenseNet121
 conv_base.trainable = True
 
-# Unfreeze the top 50 layers for training, keep the rest frozen
 for layer in conv_base.layers[:-50]:
     layer.trainable = False
 
-# Use a VERY LOW learning rate (1e-5) to fine-tune without destroying learned features
 model.compile(optimizer=Adam(learning_rate=1e-5), loss='categorical_crossentropy', metrics=['accuracy'])
 
-# 4. Start Fine-Tuning
 history_fine = model.fit(
     train_data, 
     epochs=30, 
@@ -67,7 +59,6 @@ history_fine = model.fit(
     callbacks=[EarlyStopping(patience=6, restore_best_weights=True)]
 )
 
-# 5. Evaluate and Save
 evaluation = model.evaluate(val_data)
 
 print("\n--- TRAINING COMPLETE ---")
