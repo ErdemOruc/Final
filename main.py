@@ -11,7 +11,7 @@ import asyncio
 import os
 from pathlib import Path
 
-LLM_IS_OPEN = False
+LLM_IS_OPEN = True
 
 from LoadModels import LoadModel
 
@@ -113,7 +113,6 @@ def process_image(frame: np.ndarray, start: float) -> dict:
                 ripeness     = ripeness,
             ))
 
-    # Her zaman resmi çiz ve kaydet
     annotated_frame = annotator.draw_annotations(frame.copy(), items, detections)
     fname           = f"{uuid.uuid4().hex}.jpg"
     cv2.imwrite(str(OUTPUT_DIR / fname), annotated_frame)
@@ -167,14 +166,6 @@ def process_image(frame: np.ndarray, start: float) -> dict:
 
 @app.post("/analyze")
 async def analyze(file: UploadFile = File(...)):
-    """
-    Full pipeline:
-      1. YOLO  → detect leaves and fruits, get bounding boxes
-      2. Keras → classify each crop
-      3. LLM   → generate recommendation
-      4. If problem → draw annotated image
-      5. Return JSON
-    """
     start = time.time()
 
     raw   = await file.read()
