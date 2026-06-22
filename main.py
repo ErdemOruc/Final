@@ -2,7 +2,6 @@ from fastapi import FastAPI, File, UploadFile, HTTPException
 from fastapi.responses import JSONResponse, FileResponse
 import uvicorn
 import numpy as np
-# pyrefly: ignore [missing-import]
 import cv2
 import time
 import uuid
